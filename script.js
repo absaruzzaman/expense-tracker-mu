@@ -1,101 +1,87 @@
-class ExpenseTracker {
-  constructor() {
-    this.balance = document.getElementById("balance");
-    this.money_plus = document.getElementById("money-plus");
-    this.money_minus = document.getElementById("money-minus");
-    this.list = document.getElementById("list");
-    this.form = document.getElementById("form");
-    this.text = document.getElementById("text");
-    this.amount = document.getElementById("amount");
-    this.transactionTypeInputs = document.getElementsByName("transactionType");
-    this.transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('form');
+  const textInput = document.getElementById('text');
+  const amountInput = document.getElementById('amount');
+  const categoryInput = document.getElementById('category');
+  const balance = document.getElementById('balance');
+  const incomeDisplay = document.getElementById('money-plus');
+  const expenseDisplay = document.getElementById('money-minus');
+  const transactionList = document.getElementById('list');
 
-    // Uncomment to initialize
-    // this.init();
+  let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 
-    // Uncomment to add event listener
-    // this.form.addEventListener("submit", this.addTransaction.bind(this));
+  function updateUI() {
+    let totalBalance = 0;
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    transactionList.innerHTML = '';
+
+    transactions.forEach((transaction, index) => {
+      const { text, amount, category, type } = transaction;
+      const listItem = document.createElement('li');
+      listItem.classList.add(type === 'income' ? 'plus' : 'minus');
+
+      listItem.innerHTML = `
+        <span>${text} - ${category}</span>
+        <span>$${amount}</span>
+        <button class="remove-btn" data-index="${index}">X</button>
+      `;
+
+      transactionList.appendChild(listItem);
+
+      if (type === 'income') {
+        totalIncome += amount;
+      } else {
+        totalExpense += amount;
+      }
+      totalBalance += type === 'income' ? amount : -amount;
+    });
+
+    balance.textContent = `$${totalBalance.toFixed(2)}`;
+    incomeDisplay.textContent = `+$${totalIncome.toFixed(2)}`;
+    expenseDisplay.textContent = `-$${totalExpense.toFixed(2)}`;
+
+    localStorage.setItem('transactions', JSON.stringify(transactions));
   }
 
-  // Step 1: Only keep addTransaction active, comment others
+  // Function to remove a transaction
+  function removeTransaction(event) {
+    const button = event.target;
+    if (button.classList.contains('remove-btn')) {
+      const index = button.getAttribute('data-index');
+      transactions.splice(index, 1);
+      updateUI();
+    }
+  }
 
-  addTransaction(e) {
-    e.preventDefault();
+  // Add event listener for remove button
+  transactionList.addEventListener('click', removeTransaction);
 
-    if (this.text.value.trim() === "" || this.amount.value.trim() === "") {
-      alert("Please enter text and amount");
+  function addTransaction(event) {
+    event.preventDefault();
+
+    const text = textInput.value.trim();
+    const amount = parseFloat(amountInput.value.trim());
+    const category = categoryInput.value.trim();
+    const type = document.querySelector('input[name="transactionType"]:checked').value;
+
+    if (text === '' || isNaN(amount) || category === '') {
+      alert('Please enter valid details!');
       return;
     }
 
-    let amt = Math.abs(+this.amount.value);
-    const type = this.getSelectedTransactionType();
-    if (type === "expense") amt = -amt;
+    const newTransaction = { text, amount, category, type };
+    transactions.push(newTransaction);
 
-    const transaction = {
-      id: Date.now(),
-      text: this.text.value,
-      amount: amt,
-    };
+    updateUI();
 
-
-    // Add your code here to add transaction to the list
+    textInput.value = '';
+    amountInput.value = '';
+    categoryInput.value = '';
   }
 
-  // Step 2: Uncomment this to add transaction to DOM
-  /*
-  addTransactionDOM(transaction) {
-    const item = document.createElement("li");
-    item.classList.add(transaction.amount < 0 ? "minus" : "plus");
-    item.innerHTML = `Write your code here, this is an example!   `;
-    this.list.appendChild(item);
-  }
-  */
+  form.addEventListener('submit', addTransaction);
 
-  // Step 3: Uncomment to update values
-  /*
-  updateValues() {
-    const amounts = this.transactions.map(t => t.amount);
-    const total = amounts.reduce((acc, item) => acc + item, 0).toFixed(2);
-    // write your code here, this is an example!
-    // update the balance, money_plus, and money_minus elements
-  }
-  */
-
-  // Step 4: Uncomment to get selected transaction type
-  /*
-  getSelectedTransactionType() {
-    for (const input of this.transactionTypeInputs) {
-      if (input.checked) return input.value;
-    }
-    return "expense"; // default
-  }
-  */
-
-  // Step 5: Uncomment to remove transaction
-  /*
-  removeTransaction(id) {
-    //write your code here, this is an example!
-   
-  }
-  */
-
-  // Step 6: Uncomment to update local storage
-  /*
-  updateLocalStorage() {
-    localStorage.setItem("transactions", JSON.stringify(this.transactions));
-  }
-  */
-
-  // Step 7: Uncomment to initialize
-  /*
-  init() {
-    this.list.innerHTML = "";
-    this.transactions.forEach(this.addTransactionDOM.bind(this));
-    this.updateValues();
-  }
-  */
-}
-
-// Usage example:
-// const tracker = new ExpenseTracker();
-//
+  updateUI();
+});
